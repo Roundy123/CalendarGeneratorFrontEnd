@@ -27,7 +27,7 @@ class App extends React.Component {
 
   handleEndDateChange = (date) => {
     this.setState({
-      startDate: date,
+      endDate: date,
     });
   };
 
@@ -44,7 +44,7 @@ class App extends React.Component {
     const endDate = this.dateToString(this.state.endDate);
     axios
       .get(
-        `http://13.59.225.157/calendar?start_date=${startDate}&end_date=${endDate}`
+        `https://calendar-generator-api.herokuapp.com/calendar?start_date=${startDate}&end_date=${endDate}`
       )
       .then((res) => {
         this.setState({ data: res.data });
