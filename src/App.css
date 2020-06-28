@@ -12,3 +12,8 @@
   text-align: center;
   font-size: 30px;
 }
+
+em {
+  font-weight: bold;
+  font-style: normal;
+}

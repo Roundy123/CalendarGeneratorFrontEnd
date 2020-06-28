@@ -6,6 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Button, Spinner, Container, Row, Col } from "reactstrap";
 import axios from "axios";
 import { CSVLink, CSVDownload } from "react-csv";
+import Pusher from "pusher-js";
 
 // todo - add fancier date range picker
 // todo - default end date to a week in the future
@@ -16,13 +17,28 @@ class App extends React.Component {
     startDate: new Date(),
     endDate: new Date(),
     data: [],
-    spinnerDisplay: "none",
+    spinnerVisibility: "hidden",
     downloadDisplay: "none",
     totalAPICalls: [],
+    usersOnline: [],
   };
 
   componentDidMount() {
     this.getTotalAPICalls();
+    const pusher = new Pusher("656d577c7e59c011ff9f", {
+      cluster: "eu",
+      encrypted: true,
+    });
+    // pusher allows for the realtime updates
+    const channel = pusher.subscribe("my-channel");
+    channel.bind("updateapicalls", (res) => {
+      this.setState({ totalAPICalls: res.apiCalls });
+    });
+    channel.bind("updateusersonline", (res) => {
+      this.setState({ usersOnline: res.usersOnline });
+    });
+    this.addUsersOnline();
+    window.addEventListener("beforeunload", this.removeUsersOnline);
   }
 
   handleStartDateChange = (date) => {
@@ -45,7 +61,7 @@ class App extends React.Component {
   };
 
   handleClick = () => {
-    this.setState({ spinnerDisplay: "inline-block" });
+    this.setState({ spinnerVisibility: "visible" });
     const startDate = this.dateToString(this.state.startDate);
     const endDate = this.dateToString(this.state.endDate);
     this.updateTotalAPICalls();
@@ -56,7 +72,7 @@ class App extends React.Component {
       )
       .then((res) => {
         this.setState({ data: res.data });
-        this.setState({ spinnerDisplay: "none" });
+        this.setState({ spinnerVisibility: "hidden" });
         this.setState({ downloadDisplay: "inline-block" });
       })
       .catch((err) => console.log(err));
@@ -64,7 +80,7 @@ class App extends React.Component {
 
   getTotalAPICalls = () => {
     axios
-      .get("https://guarded-bayou-83935.herokuapp.com/getapicalls")
+      .get("https://calendar-generator-front-api.herokuapp.com/getapicalls")
       .then((res) => {
         this.setState({ totalAPICalls: res.data.apiCalls });
         console.log(res);
@@ -74,9 +90,31 @@ class App extends React.Component {
 
   updateTotalAPICalls = () => {
     axios
-      .post("https://guarded-bayou-83935.herokuapp.com/updateapicalls")
+      .post("https://calendar-generator-front-api.herokuapp.com/updateapicalls")
       .then((res) => {
         this.setState({ totalAPICalls: res.data.apiCalls });
+        console.log(res);
+      })
+      .catch((err) => console.log(err));
+  };
+
+  addUsersOnline = () => {
+    axios
+      .post("https://calendar-generator-front-api.herokuapp.com/addusersonline")
+      .then((res) => {
+        this.setState({ usersOnline: res.data.usersOnline });
+        console.log(res);
+      })
+      .catch((err) => console.log(err));
+  };
+
+  removeUsersOnline = () => {
+    axios
+      .post(
+        "https://calendar-generator-front-api.herokuapp.com/removeusersonline"
+      )
+      .then((res) => {
+        this.setState({ usersOnline: res.data.usersOnline });
         console.log(res);
       })
       .catch((err) => console.log(err));
@@ -93,25 +131,29 @@ class App extends React.Component {
               style={{ borderRadius: "10px" }}
             >
               <br />
+              <em>Start Date:</em>{" "}
               <DatePicker
                 selected={this.state.startDate}
                 onChange={this.handleStartDateChange}
               />
               <br />
+              <br />
+              <em>End Date:</em>{" "}
               <DatePicker
                 selected={this.state.endDate}
                 onChange={this.handleEndDateChange}
               />
               <br />
               <br />
-              <Button onClick={this.handleClick}>Get Calendar</Button>{" "}
+              <Button onClick={this.handleClick}>Get Calendar</Button>
+              {"   "}
               <Spinner
                 type="grow"
                 color="info"
                 style={{
                   width: "3rem",
                   height: "3rem",
-                  display: this.state.spinnerDisplay,
+                  visibility: this.state.spinnerVisibility,
                 }}
               />
               <CSVLink
@@ -131,6 +173,15 @@ class App extends React.Component {
               Total API Calls
               <br />
               {this.state.totalAPICalls}
+            </Col>
+            <Col
+              xs="2"
+              className="border shadow p-5 number"
+              style={{ borderRadius: "10px", margin: "10px" }}
+            >
+              Users Online
+              <br />
+              {this.state.usersOnline}
             </Col>
           </Row>
         </Container>
