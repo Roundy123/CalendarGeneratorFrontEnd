@@ -1,0 +1,19 @@
+.themed-container {
+  margin: 40px 60px;
+  color: #354e5d;
+}
+
+.border {
+  background-color: #fbe201;
+}
+
+.number {
+  background-color: white;
+  text-align: center;
+  font-size: 30px;
+}
+
+em {
+  font-weight: bold;
+  font-style: normal;
+}
